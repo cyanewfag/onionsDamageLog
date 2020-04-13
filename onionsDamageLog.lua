@@ -7,7 +7,8 @@ local onion_groupbox_1 = gui.Groupbox(onion_window, 'Settings', 15, 15)
 local onion_huds_enabled = gui.Checkbox(onion_groupbox_1, 'onion_huds_enabled', 'HUDs', true)
 local onion_groupbox_2 = gui.Groupbox(onion_groupbox_1, 'Enabled HUDs', 0, 35)
 local onion_huds_damagelog = gui.Checkbox(onion_groupbox_2, 'onion_huds_damagelog', 'Damage Logs', true)
-local onion_huds_damagelog_max = gui.Slider(onion_groupbox_2, 'onion_huds_damagelog_max', 'HUD Log Max', 5, 1, 20)
+local onion_huds_damagelog_max = gui.Slider(onion_groupbox_2, 'onion_huds_damagelog_max', 'HUD Log Max', 5, 1, 20, 1)
+local onion_huds_damagelog_string_max = gui.Slider(onion_groupbox_2, 'onion_huds_damagelog_string_max', 'Max String Length', 20, 1, 100, 1)
 
 --
 -- Some rando vars
@@ -28,7 +29,6 @@ local mouseX, mouseY = 0, 0
 local mouseDownPosX, mouseDownPosY = 0, 0
 
 local damageLogX, damageLogY = 0, 0
-local damageLogW, damageLogH = 10, 15
 
 --
 -- dumb drawing functions for lazy people
@@ -39,17 +39,22 @@ function drawFilledRect(r, g, b, a, x, y, width, height)
 	draw.FilledRect(x, y, x + width, y + height)
 end
 
-function drawText(r, g, b, a, x, y, font, str)
+function drawText(r, g, b, a, x, y, font, str, style)
 	draw.Color(r, g, b, a)
-	draw.SetFont(font)
-	draw.Text(x, y, str)
-end
+    draw.SetFont(font)
 
-function drawCenteredText(r, g, b, a, x, y, font, str)
-	draw.Color(r, g, b, a)
-	draw.SetFont(font)
-	local textW, textH = draw.GetTextSize(str)
-	draw.Text(x - (textW / 2), y - (textH / 2), str)
+    local textW, textH = draw.GetTextSize(str)
+
+    -- Style 2 is Centered on Width and Height // Style 3 is Centered on Height // Style 1 or no style is default
+    if (style == 2) then
+        draw.Text(x - (textW / 2), y - (textH / 2), str)
+    elseif (style == 3) then
+        draw.Text(x, y - (textH / 2), str)
+    else
+        draw.Text(x, y, str)
+    end
+    
+    return { textW, textH }
 end
 
 --
@@ -76,6 +81,38 @@ function addToTable(id, name, damage, hitBox, tableMax)
         end
     end
     -- pretty code is a no go anymore so smd :clown:
+end
+
+function returnCharTable(string)
+    local charList = {}
+
+    for char in string:gmatch(".") do
+        table.insert(charList, char)
+    end
+
+    return charList
+end
+
+function capStringLength(string, max)
+    local finishedStr = ""
+    local charList = returnCharTable(string)
+
+    if (#charList > max) then
+        for i = 1, max do
+            finishedStr = finishedStr .. charList[i]
+        end
+    else
+        finishedStr = string
+    end
+
+    return finishedStr
+end
+
+function returnTextSize(string, font)
+    draw.SetFont(font)
+    local textW, textH = draw.GetTextSize(string)
+
+    return { textW, textH }
 end
 
 --
@@ -115,9 +152,61 @@ end
 function drawHUDs()
     if (onion_huds_enabled:GetValue()) then
         if (onion_huds_damagelog:GetValue()) then
-            
-        end
+            local width, height = 0, 0
+            local tableElements = { "ID", "Name", "Hitbox", "Damage" }
+            local tableElementsSize = {}
+            local paddingW, paddingH = 5, 4
+            local textDistance = 4
 
+            draw.SetFont(barFont)
+
+            for i = 1, #tableElements do
+                local textW, textH = draw.GetTextSize(tableElements[i])
+
+                if (textH > height) then
+                    height = textH
+                end
+
+                table.insert(tableElementsSize, textW)
+            end
+
+            draw.SetFont(textFont)
+
+            -- Table Setup = { ID, Name, Hitbox, Damage }
+
+            if (#recentHits ~= 0) then
+                for i = 1, #recentHits do
+                    for f = 1, #recentHits[i] do
+                        local textW, textH = draw.GetTextSize(capStringLength(recentHits[i][f], onion_huds_damagelog_string_max:GetValue()))
+
+                        if (textW > tableElementsSize[f]) then
+                            tableElementsSize[f] = textW
+                        end
+                    end
+                end
+            else
+                for i = 1, #tableElementsSize do
+
+                end
+            end
+
+            for i = 1, #tableElementsSize do
+                width = width + textDistance + tableElementsSize[i]
+            end
+
+            drawFilledRect(66, 135, 245, 180, damageLogX, damageLogY, width + (paddingW * 2), height + (paddingH * 2))
+            local usedW = 0
+
+            for i = 1, #tableElements do
+                if (i == 1) then
+                    drawText(255, 255, 255, 255, paddingW, paddingH + (height / 2), barFont, tableElements[i], 3)
+                else
+                    drawText(255, 255, 255, 255, paddingW + usedW + textDistance + (tableElementsSize[i - 1]), paddingH + (height / 2), barFont, tableElements[i], 3)
+                    usedW = usedW + textDistance + tableElementsSize[i - 1]
+                end
+            end
+        end
+        
 
     end
 end
