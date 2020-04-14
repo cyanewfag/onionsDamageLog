@@ -14,15 +14,15 @@ local onion_huds_damagelog_string_max = gui.Slider(onion_groupbox_2, 'onion_huds
 -- Some rando vars
 --
 
-local barFont = draw.CreateFont( "Tahoma", 14 )
-local textFont = draw.CreateFont( "Tahoma", 12 )
+local barFont = draw.CreateFont( "Tahoma", 18 )
+local textFont = draw.CreateFont( "Tahoma", 16 )
 
 local scrW, scrH = 0, 0
 local localPlayer, playerResources
 local initialize = false
 local hitboxIDTable = { "0", "1", "2", "3", "4", "5", "6", "7", "10" }
 local hitboxNameTable = { "Body", "Head", "Chest", "Stummy", "Arms", "Arms", "Legs", "Legs", "Body" }
-local recentHits = { }
+local recentHits = {  }
 
 local mouseState
 local mouseX, mouseY = 0, 0
@@ -73,11 +73,11 @@ end
 function addToTable(id, name, damage, hitBox, tableMax)
     table.insert(recentHits, { tostring(id), tostring(name), tostring(damage), tostring(hitBox) })
 
-    if (tableMax > #recentHits) then
-        local removals = tableMax - #recentHits
+    if (#recentHits > tableMax) then
+        local removals = #recentHits - tableMax
 
         for i = 1, removals do
-            table.remove(recentHits, 0)
+            table.remove(recentHits, 1)
         end
     end
     -- pretty code is a no go anymore so smd :clown:
@@ -153,7 +153,7 @@ function drawHUDs()
     if (onion_huds_enabled:GetValue()) then
         if (onion_huds_damagelog:GetValue()) then
             local width, height = 0, 0
-            local tableElements = { "ID", "Name", "Hitbox", "Damage" }
+            local tableElements = { "ID", "Name", "Damage", "Hitbox" }
             local tableElementsSize = {}
             local paddingW, paddingH = 5, 4
             local textDistance = 4
@@ -171,8 +171,6 @@ function drawHUDs()
             end
 
             draw.SetFont(textFont)
-
-            -- Table Setup = { ID, Name, Hitbox, Damage }
 
             if (#recentHits ~= 0) then
                 for i = 1, #recentHits do
@@ -196,6 +194,7 @@ function drawHUDs()
 
             drawFilledRect(66, 135, 245, 180, damageLogX, damageLogY, width + (paddingW * 2), height + (paddingH * 2))
             local usedW = 0
+            local usedH = height + (paddingH * 2)
 
             for i = 1, #tableElements do
                 if (i == 1) then
@@ -203,6 +202,31 @@ function drawHUDs()
                 else
                     drawText(255, 255, 255, 255, paddingW + usedW + textDistance + (tableElementsSize[i - 1]), paddingH + (height / 2), barFont, tableElements[i], 3)
                     usedW = usedW + textDistance + tableElementsSize[i - 1]
+                end
+            end
+
+            if (#recentHits ~= 0) then
+                for i = 1, #recentHits do
+                    drawFilledRect(20, 20, 20, 180, damageLogX, damageLogY + usedH + 6, width + (paddingW * 2), height + (paddingH * 2))
+                    local usedWHitLog = 0
+
+                    for f = 1, #recentHits[i] do
+                        local returnedSize = {}
+
+                        if (f == 1) then
+                            returnedSize = drawText(255, 255, 255, 255, paddingW, damageLogY + usedH + paddingH + 6, textFont, capStringLength(recentHits[i][f], onion_huds_damagelog_string_max:GetValue()), 1)
+                        else
+                            returnedSize = drawText(255, 255, 255, 255, paddingW + usedWHitLog, damageLogY + usedH + paddingH + 6, textFont, capStringLength(recentHits[i][f], onion_huds_damagelog_string_max:GetValue()), 1)
+                        end
+
+                        if (returnedSize[1] > tableElementsSize[f]) then
+                            usedWHitLog = usedWHitLog + returnedSize[1] + paddingW
+                        else
+                            usedWHitLog = usedWHitLog + tableElementsSize[f] + paddingW
+                        end
+                    end
+
+                    usedH = usedH + height + (paddingH * 2) + 6
                 end
             end
         end
