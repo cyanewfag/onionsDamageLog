@@ -24,9 +24,10 @@ local hitboxIDTable = { "0", "1", "2", "3", "4", "5", "6", "7", "10" }
 local hitboxNameTable = { "Body", "Head", "Chest", "Stummy", "Arms", "Arms", "Legs", "Legs", "Body" }
 local recentHits = {  }
 
-local mouseState
+local mouseState = "none"
 local mouseX, mouseY = 0, 0
 local mouseDownPosX, mouseDownPosY = 0, 0
+local mouseDown = "none"
 
 local damageLogX, damageLogY = 0, 0
 
@@ -198,9 +199,9 @@ function drawHUDs()
 
             for i = 1, #tableElements do
                 if (i == 1) then
-                    drawText(255, 255, 255, 255, paddingW, paddingH + (height / 2), barFont, tableElements[i], 3)
+                    drawText(255, 255, 255, 255, damageLogX + paddingW, damageLogY + paddingH + (height / 2), barFont, tableElements[i], 3)
                 else
-                    drawText(255, 255, 255, 255, paddingW + usedW + textDistance + (tableElementsSize[i - 1]), paddingH + (height / 2), barFont, tableElements[i], 3)
+                    drawText(255, 255, 255, 255, damageLogX + paddingW + usedW + textDistance + (tableElementsSize[i - 1]), damageLogY + paddingH + (height / 2), barFont, tableElements[i], 3)
                     usedW = usedW + textDistance + tableElementsSize[i - 1]
                 end
             end
@@ -214,9 +215,9 @@ function drawHUDs()
                         local returnedSize = {}
 
                         if (f == 1) then
-                            returnedSize = drawText(255, 255, 255, 255, paddingW, damageLogY + usedH + paddingH + 6, textFont, capStringLength(recentHits[i][f], onion_huds_damagelog_string_max:GetValue()), 1)
+                            returnedSize = drawText(255, 255, 255, 255, damageLogX + paddingW, damageLogY + usedH + paddingH + 6, textFont, capStringLength(recentHits[i][f], onion_huds_damagelog_string_max:GetValue()), 1)
                         else
-                            returnedSize = drawText(255, 255, 255, 255, paddingW + usedWHitLog, damageLogY + usedH + paddingH + 6, textFont, capStringLength(recentHits[i][f], onion_huds_damagelog_string_max:GetValue()), 1)
+                            returnedSize = drawText(255, 255, 255, 255, damageLogX + paddingW + usedWHitLog, damageLogY + usedH + paddingH + 6, textFont, capStringLength(recentHits[i][f], onion_huds_damagelog_string_max:GetValue()), 1)
                         end
 
                         if (returnedSize[1] > tableElementsSize[f]) then
@@ -228,6 +229,21 @@ function drawHUDs()
 
                     usedH = usedH + height + (paddingH * 2) + 6
                 end
+            end
+
+            if (mouseState == "down") then
+                if (mouseDown == "none") then
+                    if (mouseX >= damageLogX and mouseX <= (damageLogX + width) and mouseY >= damageLogY and mouseY <= (damageLogY + usedH)) then
+                        mouseDown = "first"
+                        mouseDownPosX, mouseDownPosY = mouseX - damageLogX, mouseY - damageLogY
+                    end
+                end
+            else
+                mouseDown = "none"
+            end
+        
+            if (mouseDown == "first") then
+                damageLogX, damageLogY = mouseX - mouseDownPosX, mouseY - mouseDownPosY
             end
         end
         
